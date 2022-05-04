@@ -30,7 +30,7 @@ local function put_inop_sys_msg_3(messages, dr_1, dr_2, dr_3, t_1, t_2, t_3, tit
 end
 
 local function base_cond()
-    return (get(Engine_1_avail) == 1 and get(Engine_2_avail) == 1) or (get(Any_wheel_on_ground)  == 0)
+    return (ENG.dyn[1].is_avail and ENG.dyn[2].is_avail) or (get(Any_wheel_on_ground)  == 0)
 end
 
 local inop_systems_desc = {
@@ -143,7 +143,7 @@ local inop_systems_desc = {
     },
     {
      text = "AUTO BRK", nr = 1,
-     cond_1 = function() return (get(SEC_1_status) + get(SEC_2_status) + get(SEC_3_status) < 2) or get(FAILURE_GEAR_AUTOBRAKES) == 1 or (get(Brakes_mode) ~= 1 and get(Brakes_mode) ~= 4) end,
+     cond_1 = function() return (get(SEC_1_status) + get(SEC_2_status) < 2) or get(FAILURE_GEAR_AUTOBRAKES) == 1 or (get(Brakes_mode) ~= 1 and get(Brakes_mode) ~= 4) end,
     },
     {
      text = "ALTN BRK", nr = 1,
@@ -189,8 +189,8 @@ local inop_systems_desc = {
     },
     {
      text = "GEN", nr = 2,
-     cond_1 = function() return get(FAILURE_ELEC_GEN_1) == 1 or (get(Engine_1_avail) == 0 and get(All_on_ground) == 0) or not ELEC_sys.generators[1].idg_status end,
-     cond_2 = function() return get(FAILURE_ELEC_GEN_2) == 1 or (get(Engine_2_avail) == 0 and get(All_on_ground) == 0) or not ELEC_sys.generators[2].idg_status end,
+     cond_1 = function() return get(FAILURE_ELEC_GEN_1) == 1 or (not ENG.dyn[1].is_avail and get(All_on_ground) == 0) or not ELEC_sys.generators[1].idg_status end,
+     cond_2 = function() return get(FAILURE_ELEC_GEN_2) == 1 or (not ENG.dyn[2].is_avail and get(All_on_ground) == 0) or not ELEC_sys.generators[2].idg_status end,
     },
     {
      text = "BAT", nr = 2,
@@ -227,8 +227,8 @@ local inop_systems_desc = {
     {
      text = "REVERSER", nr = 2,
      all_cond = base_cond,
-     cond_1 = function() return get(FAILURE_ENG_REV_FAULT, 1) == 1 or get(Eng_1_FADEC_powered) == 0 or (get(FAILURE_ENG_FADEC_CH1, 1) == 1 and get(FAILURE_ENG_FADEC_CH2, 1) == 1) or get(Hydraulic_G_press) < 1000 end,
-     cond_2 = function() return get(FAILURE_ENG_REV_FAULT, 2) == 1 or get(Eng_2_FADEC_powered) == 0 or (get(FAILURE_ENG_FADEC_CH1, 2) == 1 and get(FAILURE_ENG_FADEC_CH2, 2) == 1) or get(Hydraulic_Y_press) < 1000 end,
+     cond_1 = function() return get(FAILURE_ENG_REV_FAULT, 1) == 1 or not ENG.dyn[1].is_fadec_pwrd or (get(FAILURE_ENG_FADEC_CH1, 1) == 1 and get(FAILURE_ENG_FADEC_CH2, 1) == 1) or get(Hydraulic_G_press) < 1000 end,
+     cond_2 = function() return get(FAILURE_ENG_REV_FAULT, 2) == 1 or not ENG.dyn[2].is_fadec_pwrd or (get(FAILURE_ENG_FADEC_CH1, 2) == 1 and get(FAILURE_ENG_FADEC_CH2, 2) == 1) or get(Hydraulic_Y_press) < 1000 end,
     },
     
 
@@ -236,50 +236,50 @@ local inop_systems_desc = {
     {
      text = "AIL", text_after = "", text_1="L", text_2="R", nr = 2,
      all_cond = base_cond,
-     cond_1 = function() return not FBW.fctl.surfaces.ail.L.controlled end,
-     cond_2 = function() return not FBW.fctl.surfaces.ail.R.controlled end,
+     cond_1 = function() return not FCTL.AIL.STAT.L.controlled end,
+     cond_2 = function() return not FCTL.AIL.STAT.R.controlled end,
     },
     {
      text = "ELEV", text_after = "", text_1="L", text_2="R", nr = 2,
      all_cond = base_cond,
-     cond_1 = function() return not FBW.fctl.surfaces.elev.L.controlled end,
-     cond_2 = function() return not FBW.fctl.surfaces.elev.R.controlled end,
+     cond_1 = function() return not FCTL.ELEV.STAT.L.controlled end,
+     cond_2 = function() return not FCTL.ELEV.STAT.R.controlled end,
     },
     {
      text = "SPLR", nr = 2, text_1="L1", text_2="L5",
      all_cond = base_cond,
-     cond_1 = function() return not FBW.fctl.surfaces.splr.L[1].controlled end,
-     cond_2 = function() return not FBW.fctl.surfaces.splr.L[5].controlled end,
+     cond_1 = function() return not FCTL.SPLR.STAT.L[1].controlled end,
+     cond_2 = function() return not FCTL.SPLR.STAT.L[5].controlled end,
     },
     {
      text = "SPLR", nr = 3, text_1="L2", text_2="L3", text_3="L4",
      all_cond = base_cond,
-     cond_1 = function() return not FBW.fctl.surfaces.splr.L[2].controlled end,
-     cond_2 = function() return not FBW.fctl.surfaces.splr.L[3].controlled end,
-     cond_3 = function() return not FBW.fctl.surfaces.splr.L[4].controlled end,
+     cond_1 = function() return not FCTL.SPLR.STAT.L[2].controlled end,
+     cond_2 = function() return not FCTL.SPLR.STAT.L[3].controlled end,
+     cond_3 = function() return not FCTL.SPLR.STAT.L[4].controlled end,
     },
     {
      text = "SPLR", nr = 2, text_1="R1", text_2="R5",
      all_cond = base_cond,
-     cond_1 = function() return not FBW.fctl.surfaces.splr.R[1].controlled end,
-     cond_2 = function() return not FBW.fctl.surfaces.splr.R[5].controlled end,
+     cond_1 = function() return not FCTL.SPLR.STAT.R[1].controlled end,
+     cond_2 = function() return not FCTL.SPLR.STAT.R[5].controlled end,
     },
     {
      text = "SPLR", nr = 3, text_1="R2", text_2="R3", text_3="R4",
      all_cond = base_cond,
-     cond_1 = function() return not FBW.fctl.surfaces.splr.R[2].controlled end,
-     cond_2 = function() return not FBW.fctl.surfaces.splr.R[3].controlled end,
-     cond_3 = function() return not FBW.fctl.surfaces.splr.R[4].controlled end,
+     cond_1 = function() return not FCTL.SPLR.STAT.R[2].controlled end,
+     cond_2 = function() return not FCTL.SPLR.STAT.R[3].controlled end,
+     cond_3 = function() return not FCTL.SPLR.STAT.R[4].controlled end,
     },
     {
      text = "SPD BRK", nr = 1,
      all_cond = base_cond,
-     cond_1 = function() return not FBW.fctl.surfaces.splr.R[2].controlled and not FBW.fctl.surfaces.splr.R[3].controlled and not FBW.fctl.surfaces.splr.R[4].controlled and not FBW.fctl.surfaces.splr.L[2].controlled and not FBW.fctl.surfaces.splr.L[3].controlled and not FBW.fctl.surfaces.splr.L[4].controlled end,
+     cond_1 = function() return not FCTL.SPLR.STAT.R[2].controlled and not FCTL.SPLR.STAT.R[3].controlled and not FCTL.SPLR.STAT.R[4].controlled and not FCTL.SPLR.STAT.L[2].controlled and not FCTL.SPLR.STAT.L[3].controlled and not FCTL.SPLR.STAT.L[4].controlled end,
     },
     {
      text = "STABILIZER", nr = 1,
      all_cond = base_cond,
-     cond_1 = function() return not FBW.fctl.surfaces.THS.THS.mechanical end,
+     cond_1 = function() return not FCTL.THS.STAT.mechanical end,
     },
     {
      text = "SLATS", nr = 1,
@@ -297,16 +297,9 @@ local inop_systems_desc = {
     },
     {
      text = "SEC",
-     nr = 3,
+     nr = 2,
      cond_1 = function() return get(FAILURE_FCTL_SEC_1) == 1 or (get(DC_ess_bus_pwrd) == 0 and get(HOT_bus_1_pwrd) == 0) end,
      cond_2 = function() return get(FAILURE_FCTL_SEC_2) == 1 or (get(DC_bus_2_pwrd) == 0) end,
-     cond_3 = function() return get(FAILURE_FCTL_SEC_3) == 1 or (get(DC_bus_2_pwrd) == 0) end,
-    },
-    {
-     text = "FAC",
-     nr = 2,
-     cond_1 = function() return get(FAILURE_FCTL_FAC_1) == 1 or not (get(AC_ess_bus_pwrd) == 1 and get(DC_shed_ess_pwrd) == 1) end,
-     cond_2 = function() return get(FAILURE_FCTL_FAC_2) == 1 or not (get(AC_bus_2_pwrd) == 1 and get(DC_bus_2_pwrd) == 1) end,
     },
 
     -- FUEL
@@ -388,11 +381,11 @@ local inop_systems_desc = {
     },
     {
      text = "G ENG 1 PUMP", nr = 1,
-     cond_1 = function() return (get(Engine_1_avail) == 0 and get(All_on_ground) == 0) or get(FAILURE_HYD_G_pump) == 1 or get(FAILURE_HYD_G_R_overheat) == 1 or get(Hydraulic_G_qty) == 0 end,
+     cond_1 = function() return (not ENG.dyn[1].is_avail and get(All_on_ground) == 0) or get(FAILURE_HYD_G_pump) == 1 or get(FAILURE_HYD_G_R_overheat) == 1 or get(Hydraulic_G_qty) == 0 end,
     },
     {
      text = "Y ENG 2 PUMP", nr = 1,
-     cond_1 = function() return (get(Engine_2_avail) == 0 and get(All_on_ground) == 0) or get(FAILURE_HYD_Y_pump) == 1 or get(FAILURE_HYD_Y_R_overheat) == 1 or get(Hydraulic_Y_qty) == 0 end,
+     cond_1 = function() return (not ENG.dyn[2].is_avail and get(All_on_ground) == 0) or get(FAILURE_HYD_Y_pump) == 1 or get(FAILURE_HYD_Y_R_overheat) == 1 or get(Hydraulic_Y_qty) == 0 end,
     },
     {
      text = "PTU", nr = 1,
@@ -459,6 +452,12 @@ local inop_systems_desc = {
             or (ADIRS_sys[ADIRS_1].ir_status ~= IR_STATUS_ATT_ALIGNED and ADIRS_sys[ADIRS_1].ir_status ~= IR_STATUS_ALIGNED)
      end,
     },
+    {
+     text = "RA", nr = 2,
+     cond_1 = function() return not RA_sys.Sensors[1].Valid or get(RA_1_status) == 0 end,
+     cond_2 = function() return not RA_sys.Sensors[2].Valid or get(RA_2_status) == 0 end,
+    },
+
     {
      text = "ATC/XPDR", nr = 2,
      cond_1 = function() return get(FAILURE_ATC_1) == 1 or get(AC_ess_shed_pwrd) == 0 

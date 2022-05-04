@@ -69,7 +69,16 @@ sasl.registerCommandHandler (Toggle_park_brake, 0, function(phase) Toggle_parkbr
 sasl.registerCommandHandler (Toggle_park_brake_XP, 0, function(phase) Toggle_parkbrake(phase) end)
 sasl.registerCommandHandler (Toggle_brake_regular_XP, 0, function(phase) Toggle_regular(phase) end)
 sasl.registerCommandHandler (Push_brake_regular_XP, 0, function(phase) Braking_regular(phase) end)
+-- Airbus TCA support
+sasl.registerCommandHandler (TCA_park_brake_set, 0, function(phase) Set_parkbrake(phase) end)
 
+function Set_parkbrake(phase)
+  if phase == SASL_COMMAND_CONTINUE then
+        set(Parkbrake_switch_pos, 1)
+    else
+        set(Parkbrake_switch_pos, 0)
+    end  
+end
 
 function Toggle_parkbrake(phase)
     if phase == SASL_COMMAND_BEGIN then
@@ -256,7 +265,7 @@ local function update_steering()
                                      or (get(Hydraulic_Y_press) <= 10)
                                      or (not is_bscu_1_working and not is_bscu_2_working)
 
-    if is_steering_completely_off or (get(Engine_1_avail) == 0 and get(Engine_2_avail) == 0) then
+    if is_steering_completely_off or (not ENG.dyn[1].is_avail and not ENG.dyn[2].is_avail) then
         return -- Cannot move the wheel
     end
 
@@ -267,21 +276,21 @@ local function update_steering()
     -- degradation of steering
     local hyd_steer_coeff = Math_clamp(Math_rescale(10, 0, 1450, 1, get(Hydraulic_Y_press)), 0, 1)
     
-    local pedals_pos = get(Yaw)
+    local pedals_pos = get(XP_YAW)
     
-    if EFB.preferences then
-        if EFB.preferences["nws"] == 0 then
-            pedals_pos = get(Capt_Roll)
-        elseif EFB.preferences["nws"] == 2 then
+    if EFB then
+        if EFB.pref_get_nws() == 0 then
+            pedals_pos = get(XP_CAPT_X)
+        elseif EFB.pref_get_nws() == 2 then
             pedals_pos = get(Joystick_tiller)
         end
     end
     -- Update graphical positions for the rudder pedals
-    pedals_pos = Math_clamp((get(Rudder_trim_target_angle)/30) + pedals_pos, -1, 1)
+    pedals_pos = Math_clamp((get(RUD_TRIM_ANGLE)/30) + pedals_pos, -1, 1)
     set(Rudder_pedal_pos, pedals_pos)
     
-    -- And now add the AUTOFLT component
-    pedals_pos = Math_clamp(pedals_pos + get(AUTOFLT_yaw), -1, 1)
+    -- TODO: And now add the AUTOFLT component
+    --pedals_pos = Math_clamp(pedals_pos + get(AUTOFLT_yaw), -1, 1)
 
     if get(Any_wheel_on_ground) == 0 then
         return -- Inhibition condition

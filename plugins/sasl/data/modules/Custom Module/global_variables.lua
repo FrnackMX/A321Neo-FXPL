@@ -50,14 +50,16 @@ ND_terrain = {}
 DRAIMS_common = {}
 FMGS_sys = {}
 GPS_sys = {}
+RA_sys = {}
 TCAS_sys = {}
+
+ -- do NOT name anything else as "EFB", this is super important, used to store functions. See efb_prefrences.lua 
+EFB = {}
 
 WEIGHTS = {}
 
 -- Engine data depending on the user choice
 ENG = { data_is_loaded = false }
-
-EFB = {} -- TODO: Remove from here. EFB is not used outside EFB
 
 AvionicsBay = {}
 
@@ -65,11 +67,11 @@ AvionicsBay = {}
 -- MCDU
 MCDU = {}
 
+FCTL = {}
 FBW = {
     rates = {},
     fctl = {
         surfaces = {},
-        status = {},
         control = {},
     },
     lateral = {

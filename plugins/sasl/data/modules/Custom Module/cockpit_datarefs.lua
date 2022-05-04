@@ -271,10 +271,6 @@ Ecam_btn_light_FCTL  = createGlobalPropertyi("a321neo/cockpit/ecam/buttons/light
 Ecam_btn_light_CLR   = createGlobalPropertyi("a321neo/cockpit/ecam/buttons/light_clr", 0, false, true, false)   --0: OFF, 1: ON
 Ecam_btn_light_STS   = createGlobalPropertyi("a321neo/cockpit/ecam/buttons/light_sts", 0, false, true, false)   --0: OFF, 1: ON
 
---flight controls
-Elev_trim_degrees = createGlobalPropertyf("a321neo/cockpit/controls/elevator_trim_degrees", 0, false, true, false)
-
-
 --wheel
 XPlane_parkbrake_ratio = globalProperty("sim/cockpit2/controls/parking_brake_ratio")
 Nosewheel_Steering_and_AS_sw = createGlobalPropertyf("a321neo/cockpit/wheel/antiskid_steering", 0, false, true, false)  -- 0: off, 1: on
@@ -453,9 +449,9 @@ Current_heading = globalProperty("sim/cockpit2/gauges/indicators/heading_AHARS_d
 Ground_track = globalProperty("sim/cockpit2/gauges/indicators/ground_track_mag_pilot")
 VVI = globalProperty("sim/cockpit2/gauges/indicators/vvi_fpm_pilot")
 
-Marker_OM_lit = globalProperty("sim/cockpit2/radios/indicators/outer_marker_lit")
-Marker_MM_lit = globalProperty("sim/cockpit2/radios/indicators/middle_marker_lit")
-Marker_IM_lit = globalProperty("sim/cockpit2/radios/indicators/inner_marker_lit")
+Marker_OM_over = globalProperty("sim/cockpit/misc/over_outer_marker")
+Marker_MM_over = globalProperty("sim/cockpit/misc/over_middle_marker")
+Marker_IM_over = globalProperty("sim/cockpit/misc/over_inner_marker")
 
 --AUTOFLT--
 AUTOFLT_FCU_SPD_or_MACH     = createGlobalPropertyi("a321neo/cockpit/AUTOFLT/FCU/spd_or_mach", 0, false, true, false)

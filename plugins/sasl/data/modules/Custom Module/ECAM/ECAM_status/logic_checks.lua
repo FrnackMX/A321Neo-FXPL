@@ -30,13 +30,13 @@ end
 
 function elec_in_emer_config()
       condition =  ((get(Gen_1_pwr) == 0 or get(Gen_1_line_active) == 1) and get(Gen_2_pwr) ==0 and get(Gen_APU_pwr) == 0 and get(Gen_EXT_pwr) == 0)
-        condition = condition and not (get(Eng_is_failed, 1) and get(Eng_is_failed, 2))
+        condition = condition and not (ENG.dyn[1].is_failed and ENG.dyn[2].is_failed)
     return condition
 end
 
 function engine_shuts_down()
     return (get(Engine_1_master_switch) == 0 and get(EWD_flight_phase) >= PHASE_ABOVE_80_KTS and get(EWD_flight_phase) <= PHASE_TOUCHDOWN)
-    or ((get(EWD_flight_phase) < 3 or get(EWD_flight_phase) > 8) and get(Fire_pb_ENG1_status) == 1)
+    or ((get(EWD_flight_phase) < PHASE_1ST_ENG_TO_PWR or get(EWD_flight_phase) > PHASE_TOUCHDOWN) and get(Fire_pb_ENG1_status) == 1)
 end
 
 function spdbrk_3_and_4_fault() --fcom 5231
@@ -126,7 +126,7 @@ end
 
   function elec_in_emer_config()
       condition =  ((get(Gen_1_pwr) == 0 or get(Gen_1_line_active) == 1) and get(Gen_2_pwr) ==0 and get(Gen_APU_pwr) == 0 and get(Gen_EXT_pwr) == 0)
-        condition = condition and not (get(Eng_is_failed, 1) and get(Eng_is_failed, 2))
+        condition = condition and not (ENG.dyn[1].is_failed and ENG.dyn[2].is_failed)
     return condition
 end
 
@@ -204,9 +204,8 @@ end
         or
         (get(FBW_total_control_law) == FBW_ALT_REDUCED_PROT_LAW or get(FBW_total_control_law) == FBW_ALT_NO_PROT_LAW)
         or 
-        get(FAILURE_FCTL_SEC_1) == 1 and --fcom 5207
-        get(FAILURE_FCTL_SEC_2) == 1 and
-        get(FAILURE_FCTL_SEC_3) == 1
+        (get(FAILURE_FCTL_SEC_1) == 1 and --fcom 5207
+        get(FAILURE_FCTL_SEC_2) == 1)
         or
         Y_is_low_pressure() and B_is_low_pressure() and --B+Y LO PR
             not Y_is_low_level() and not B_is_low_level() or

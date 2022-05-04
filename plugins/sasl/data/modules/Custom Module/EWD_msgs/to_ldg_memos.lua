@@ -78,7 +78,7 @@ Message_TOLDG_CABIN = {
 
 Message_TOLDG_SPLRS = {
     text = function(self)
-        if (get(Speedbrake_handle_ratio) < 0) then
+        if (get(SPDBRK_HANDLE_RATIO) < 0) then
             return "    SPLRS ARM"
         else
             return "    SPLRS.............ARM"
@@ -86,7 +86,7 @@ Message_TOLDG_SPLRS = {
     end,
 
     color = function(self)
-        if (get(Speedbrake_handle_ratio) < 0) then
+        if (get(SPDBRK_HANDLE_RATIO) < 0) then
             return COL_INDICATION
         else
             return COL_ACTIONS
@@ -234,7 +234,7 @@ MessageGroup_MEMO_TAKEOFF = {
     -- Method to check if this message group is active
     is_active = function(self)
         -- Active after 2 minutes from the second engine start this message is enabled
-        if (get(Engine_1_avail) == 1 and get(Engine_2_avail) == 1) then
+        if (ENG.dyn[1].is_avail and ENG.dyn[2].is_avail) then
             if not timer_2nd_engine_on_started then
                 sasl.startTimer(timer_2nd_engine_on)
                 timer_2nd_engine_on_started = true
@@ -332,7 +332,7 @@ local Message_CONFIG_TAKEOFF_SPDBRK = {
             return COL_WARNING
     end,
     is_active = function(self)
-      return get(Speedbrake_handle_ratio) > 0
+      return get(SPDBRK_HANDLE_RATIO) > 0
     end
 }
 
@@ -356,7 +356,7 @@ local Message_CONFIG_TAKEOFF_PITCH_TRIM = {
             return COL_WARNING
     end,
     is_active = function(self)
-      return get(Elev_trim_ratio) > (3.5/13.5) or get(Elev_trim_ratio) < (-3/4)
+      return get(THS_DEF) > 3.5 or get(THS_DEF) < -3
     end
 }
 
@@ -369,7 +369,7 @@ local Message_CONFIG_TAKEOFF_RUD_TRIM = {
             return COL_WARNING
     end,
     is_active = function(self)
-      return get(Rudder_trim_target_angle) ~= 0
+      return get(RUD_TRIM_ANGLE) ~= 0
     end
 }
 

@@ -43,13 +43,7 @@ local sim_l_iso_line_xy = {size[1]/2 - size[1]/4 - 65, size[2]/2+110, size[1]/2 
 local sim_r_iso_line_xy = {size[1]/2 - size[1]/4 + 35, size[2]/2+110, size[1]/2 - size[1]/4 + 65, size[2]/2+110}
 
 
-function update()
-    --change menu item state
-    if Packs_debug_window:isVisible() == true then
-        sasl.setMenuItemState(Menu_debug, ShowHidePacksDebug, MENU_CHECKED)
-    else
-        sasl.setMenuItemState(Menu_debug, ShowHidePacksDebug, MENU_UNCHECKED)
-    end
+local function update_data()
 
     if get(ENG_1_bleed_switch) == 1 then
         eng_1_bleed_cl = ECAM_GREEN
@@ -198,7 +192,7 @@ local function draw_a32nx_part()
     -- Lower part - engines bleed
     
     sasl.gl.drawFrame(width_start+25 , 10, 50, 30, ECAM_WHITE)
-    sasl.gl.drawText(Font_B612MONO_regular, width_start+50 , 20, "ENG 1", 10,false, false, TEXT_ALIGN_CENTER, get(Engine_1_avail) == 1 and ECAM_GREEN or ECAM_ORANGE)
+    sasl.gl.drawText(Font_B612MONO_regular, width_start+50 , 20, "ENG 1", 10,false, false, TEXT_ALIGN_CENTER, ENG.dyn[1].is_avail and ECAM_GREEN or ECAM_ORANGE)
     sasl.gl.drawText(Font_B612MONO_regular, width_start+60 , 45, "IP", 8, false, false, TEXT_ALIGN_CENTER, ECAM_WHITE)
     sasl.gl.drawLine(width_start+50, 40, width_start+50, 100, ECAM_WHITE)
     sasl.gl.drawLine(width_start+75, 25, width_start+100, 25, ECAM_WHITE)
@@ -213,7 +207,7 @@ local function draw_a32nx_part()
     draw_valve_v(width_start+100, 65, get(L_HP_valve) == 1)
         
     sasl.gl.drawFrame(width_end-75 , 10, 50, 30, ECAM_WHITE)
-    sasl.gl.drawText(Font_B612MONO_regular, width_end-50 , 20, "ENG 2", 10,false, false, TEXT_ALIGN_CENTER, get(Engine_2_avail) == 1 and ECAM_GREEN or ECAM_ORANGE)
+    sasl.gl.drawText(Font_B612MONO_regular, width_end-50 , 20, "ENG 2", 10,false, false, TEXT_ALIGN_CENTER, ENG.dyn[2].is_avail and ECAM_GREEN or ECAM_ORANGE)
     sasl.gl.drawText(Font_B612MONO_regular, width_end-60 , 45, "IP", 8, false, false, TEXT_ALIGN_CENTER, ECAM_WHITE)
     sasl.gl.drawLine(width_end-50, 40, width_end-50, 100, ECAM_WHITE)
     sasl.gl.drawLine(width_end-75, 25, width_end-100, 25, ECAM_WHITE)
@@ -413,6 +407,10 @@ end
 
 
 function draw()
+
+    update_data()
+
+    
     sasl.gl.drawRectangle(0, 0, size[1], size[2], BLACK)
     sasl.gl.drawLine(size[1]/2-5, 0, size[1]/2-5, size[2], ECAM_BLUE)
     sasl.gl.drawLine(size[1]/2+20, 420, size[1]-20, 420, UI_LIGHT_GREY)

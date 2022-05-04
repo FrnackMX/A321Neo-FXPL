@@ -46,23 +46,23 @@ function update_consumptions()
     end
     
     -- FADEC and engine related stuffs
-    if get(Eng_1_Firewall_valve) == 0 then
+    if ENG.dyn[1].firewall_valve == 0 then
         -- FADEC has power if fire valve is open
         ELEC_sys.add_power_consumption(ELEC_BUS_DC_ESS_SHED, 0.5, 0.5)
         ELEC_sys.add_power_consumption(ELEC_BUS_DC_BAT_BUS, 0.5, 0.5)
         ELEC_sys.add_power_consumption(ELEC_BUS_DC_1, 0.05, 0.05)
     end
-    if get(Eng_2_Firewall_valve) == 0 then
+    if ENG.dyn[2].firewall_valve == 0 then
         -- FADEC has power if fire valve is open
         ELEC_sys.add_power_consumption(ELEC_BUS_DC_ESS_SHED, 0.5, 0.5)
         ELEC_sys.add_power_consumption(ELEC_BUS_DC_2, 0.55, 0.55)
     end
     if get(Engine_mode_knob) == 1 then    -- Ignition mode
         ELEC_sys.add_power_consumption(ELEC_BUS_AC_ESS, 0.1, 0.1)
-        if get(Engine_1_avail) == 0 then
+        if not ENG.dyn[1].is_avail then
             ELEC_sys.add_power_consumption(ELEC_BUS_AC_1, 1, 1.2)
         end
-        if get(Engine_2_avail) == 0 then
+        if not ENG.dyn[2].is_avail then
             ELEC_sys.add_power_consumption(ELEC_BUS_AC_2, 1, 1.2)
         end
     end
@@ -99,17 +99,6 @@ function update_consumptions()
     end
     if get(SEC_2_status) == 1 then
         ELEC_sys.add_power_consumption(ELEC_BUS_DC_2, 0.5, 0.5)
-    end
-    if get(SEC_3_status) == 1 then
-        ELEC_sys.add_power_consumption(ELEC_BUS_DC_2, 0.5, 0.5)
-    end   
-    if get(FAC_1_status) == 1 then
-       ELEC_sys.add_power_consumption(ELEC_BUS_DC_ESS_SHED, 0.5, 0.5)
-       ELEC_sys.add_power_consumption(ELEC_BUS_AC_ESS, 0.05, 0.05)
-    end
-    if get(FAC_2_status) == 1 then
-       ELEC_sys.add_power_consumption(ELEC_BUS_DC_2, 0.5, 0.5)
-       ELEC_sys.add_power_consumption(ELEC_BUS_AC_2, 0.05, 0.05)
     end
     -- Flap and slats ocmputer
     ELEC_sys.add_power_consumption(ELEC_BUS_DC_ESS, 0.5, 0.5)

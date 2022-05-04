@@ -18,50 +18,65 @@
 
 
 ----------------------------------------------------------------------------------------------------
--- Constants
+-- Constants, keep local until otherwise required
 ----------------------------------------------------------------------------------------------------
 
-ENG_NOMINAL_MAX_PRESS = 55
-ENG_NOMINAL_MIN_PRESS = 38
-APU_NOMINAL_PRESS = 42
+local ENG_NOMINAL_MAX_PRESS = 54  -- 53 psi +/- 2 acc documentation
+local ENG_NOMINAL_MIN_PRESS = 38
+local APU_NOMINAL_PRESS = 42
 
-GAS_PRESSURE = 45
+local GAS_PRESSURE = 45
 
-BLEED_UP_TARGET = 40
-BLEED_LO_TARGET = 34
+-- values observed in IDLE mode
+local HP_VALVE_CLOSE_PSI_DUAL_BLEED = 42    -- HP valve closes at this pressure acc CAE sim in dual eng bleed situation
+local HP_VALVE_CLOSE_PSI_SINGLE_BLEED = 51  -- or 52 HP valve closes at this pressure acc CAE sim in single eng bleed situation
 
-LOSS_PSI_HYD           = 0.5
-LOSS_PSI_WATER_TANK    = 0.5
-LOSS_PSI_CARGO_HEAT    = 1
-LOSS_PSI_WING_ANTICE_L = 3
-LOSS_PSI_WING_ANTICE_R = 3
-LOSS_PSI_PACK_L        = 3
-LOSS_PSI_PACK_R        = 3
-LOSS_PSI_ENG_CRANK     = 6
+local LOSS_PSI_HYD           = 0.5
+local LOSS_PSI_WATER_TANK    = 0.5
+local LOSS_PSI_CARGO_HEAT    = 1
+local LOSS_PSI_WING_ANTICE_L = 3
+local LOSS_PSI_WING_ANTICE_R = 3
+local LOSS_PSI_PACK_L        = 3
+local LOSS_PSI_PACK_R        = 3
+local LOSS_PSI_ENG_CRANK     = 6
 
-PACK_KG_PER_SEC_NOM    = 1
+local PACK_KG_PER_SEC_NOM    = 1
 
 ----------------------------------------------------------------------------------------------------
 -- Global variables
 ----------------------------------------------------------------------------------------------------
 local eng_bleed_switch    = {true, true}
+local eng_bleed_on_time = {0,0}
+local eng_bleed_off_time = {0,0}
 local eng_bleed_valve_pos = {false, false}
+local is_single_bleed = false  -- only one engines supplies bleed air to both packs
+local target_max_bleed = 0
+
+
 local pack_valve_switch   = {true, true}
+local pack_valve_on_time = {0,0}
+local pack_valve_off_time = {0,0}
+
 local pack_valve_pos      = {false, false}
+-- actual times of valve position change
+local pack_time_open_valve = {0,0}
+local pack_time_close_valve = {0,0}
 
 local apu_bleed_switch    = false
 local apu_bleed_valve_pos = false
+local apu_bleed_off_time = 0
 
 local econ_flow_switch = false
 
-local x_bleed_status = false
+local x_bleed_status = false -- x-bleed can be switched manually or automatically by BMC (e.g. GAS bleed or APU bleed)
+local x_bleed_switch_time = -1 -- time x-bleed status changed for switching animation of valve display
+
 local ditching_switch = false
 
 local eng_lp_pressure      = {0,0}
 local apu_pressure         = 0
 local bleed_consumption    = {0,0}
 local bleed_pressure       = {0,0}
-local pack_time_open_valve = {0,0}
 
 local cabin_hot_air    = true
 local cargo_hot_air    = true
@@ -81,11 +96,75 @@ sasl.registerCommandHandler(Toggle_ECON_flow, 0, function(phase) if phase == SAS
 sasl.registerCommandHandler(X_bleed_dial_up, 0, function(phase) Knob_handler_up_int(phase, X_bleed_dial, 0, 2) end)
 sasl.registerCommandHandler(X_bleed_dial_dn, 0, function(phase) Knob_handler_down_int(phase, X_bleed_dial, 0, 2) end)
 
-sasl.registerCommandHandler (Toggle_apu_bleed, 0,  function(phase) if phase == SASL_COMMAND_BEGIN then apu_bleed_switch = not apu_bleed_switch end end)
-sasl.registerCommandHandler (Toggle_eng1_bleed, 0, function(phase) if phase == SASL_COMMAND_BEGIN then eng_bleed_switch[1] = not eng_bleed_switch[1] end end)
-sasl.registerCommandHandler (Toggle_eng2_bleed, 0, function(phase) if phase == SASL_COMMAND_BEGIN then eng_bleed_switch[2] = not eng_bleed_switch[2] end end)
-sasl.registerCommandHandler (Toggle_pack1, 0, function(phase) if phase == SASL_COMMAND_BEGIN then pack_valve_switch[1] = not pack_valve_switch[1] end end)
-sasl.registerCommandHandler (Toggle_pack2, 0, function(phase) if phase == SASL_COMMAND_BEGIN then pack_valve_switch[2] = not pack_valve_switch[2] end end)
+sasl.registerCommandHandler(Toggle_apu_bleed, 0,
+        function(phase)
+            if phase == SASL_COMMAND_BEGIN then
+                apu_bleed_switch = not apu_bleed_switch
+                if (apu_bleed_switch == false) then
+                    apu_bleed_off_time = get(TIME)
+                end
+            end
+        end
+)
+
+sasl.registerCommandHandler (Toggle_eng1_bleed, 0,
+        function(phase)
+            if phase == SASL_COMMAND_BEGIN then
+                eng_bleed_switch[1] = not eng_bleed_switch[1]
+                if eng_bleed_switch[1] == false then
+                    eng_bleed_off_time[1] = get(TIME)
+                    eng_bleed_on_time[1] = 0 -- reset
+                else
+                    eng_bleed_on_time[1] = get(TIME)
+                    eng_bleed_off_time[1] = 0 -- reset
+                end
+            end
+        end
+)
+sasl.registerCommandHandler (Toggle_eng2_bleed, 0,
+        function(phase)
+            if phase == SASL_COMMAND_BEGIN then
+                eng_bleed_switch[2] = not eng_bleed_switch[2]
+                if eng_bleed_switch[2] == false then
+                    eng_bleed_off_time[2] = get(TIME)
+                    eng_bleed_on_time[2] = 0 -- reset
+                else
+                    eng_bleed_on_time[2] = get(TIME)
+                    eng_bleed_off_time[2] = 0 -- reset
+                end
+            end
+        end
+)
+
+sasl.registerCommandHandler (Toggle_pack1, 0,
+        function(phase)
+            if phase == SASL_COMMAND_BEGIN then
+                pack_valve_switch[1] = not pack_valve_switch[1]
+                if pack_valve_switch[1] == false then
+                    pack_valve_off_time[1] = get(TIME)
+                    pack_valve_on_time[1] = 0 -- reset
+                else
+                    eng_bleed_on_time[1] = get(TIME)
+                    eng_bleed_off_time[1] = 0 -- reset
+                end
+            end
+        end
+)
+sasl.registerCommandHandler (Toggle_pack2, 0,
+        function(phase)
+            if phase == SASL_COMMAND_BEGIN then
+                pack_valve_switch[2] = not pack_valve_switch[2]
+                if pack_valve_switch[2] == false then
+                    pack_valve_off_time[2] = get(TIME)
+                    pack_valve_on_time[2] = 0 -- reset
+                else
+                    eng_bleed_on_time[2] = get(TIME)
+                    eng_bleed_off_time[2] = 0 -- reset
+                end
+            end
+        end
+)
+
 sasl.registerCommandHandler (Press_ditching, 0, function(phase) if phase == SASL_COMMAND_BEGIN then ditching_switch = not ditching_switch end end)
 
 sasl.registerCommandHandler (Toggle_cab_hotair,          0, function(phase) if phase == SASL_COMMAND_BEGIN then cabin_hot_air    = not cabin_hot_air end end)
@@ -112,18 +191,40 @@ function onAirportLoaded()
     set(Right_pack_iso_valve, 0)
 end
 
+local function update_bleed_config_and_targets()
+    -- if x-bleed is on one engine feeds bleed air
+    local not_both_engines = not (ENG.dyn[1].is_avail and ENG.dyn[2].is_avail)
+    is_single_bleed = (x_bleed_status and not_both_engines or (eng_bleed_switch[1] == false or eng_bleed_switch[2] == false)) and 1 or 0
+    -- only if we have both packs on, we have a dual bleed situation regarding demand
+    if not pack_valve_pos[1] or not pack_valve_pos[2] then is_single_bleed = 0 end
+
+    set(Bleed_is_single, is_single_bleed)
+
+    target_max_bleed = is_single_bleed == 1 and HP_VALVE_CLOSE_PSI_SINGLE_BLEED or HP_VALVE_CLOSE_PSI_DUAL_BLEED
+end
+
 local function update_hp_valves()
 
-    -- HP valve keep pressure in the range 32-40
-    if get(Engine_1_avail) == 1 and eng_bleed_switch[1] and get(L_bleed_press) <= BLEED_LO_TARGET then
+    -- TODO further improve HP logic
+
+    -- HP valve keep pressure in the range 42-52 unless IP valve is closed
+
+    if  get(L_IP_valve) == 0 then
+        -- if IP valve is closed, HP valve closes in any case
+        set(L_HP_valve,0)
+    elseif ENG.dyn[1].is_avail and eng_bleed_switch[1] and get(L_bleed_press) < target_max_bleed  then
+        -- TODO just open the valve here will not increase pressure, since for display only
         set(L_HP_valve, 1)
-    elseif get(Engine_1_avail) == 0 or (not eng_bleed_switch[1]) or get(L_bleed_press) > BLEED_UP_TARGET then
+    elseif not ENG.dyn[1].is_avail or (not eng_bleed_switch[1]) or get(L_bleed_press) >= target_max_bleed then
         set(L_HP_valve, 0)
     end
 
-    if get(Engine_2_avail) == 1 and eng_bleed_switch[2] and get(R_bleed_press) <= BLEED_LO_TARGET then
+    if  get(R_IP_valve) == 0 then
+        -- if IP valve is closed, HP valve closes in any case
+        set(R_HP_valve,0)
+    elseif ENG.dyn[2].is_avail and eng_bleed_switch[2] and get(R_bleed_press) < target_max_bleed then
         set(R_HP_valve, 1)
-    elseif get(Engine_2_avail) == 0 or (not eng_bleed_switch[2]) or get(R_bleed_press) > BLEED_UP_TARGET then
+    elseif not ENG.dyn[2].is_avail or (not eng_bleed_switch[2]) or get(R_bleed_press) >= target_max_bleed then
         set(R_HP_valve, 0)
     end
 
@@ -132,45 +233,92 @@ end
 local function update_bleed_valves()
 
     if get(FAILURE_BLEED_APU_VALVE_STUCK) == 0 then
+        -- TODO better don't hardcode APU values in several places
         apu_bleed_valve_pos = get(Apu_N1) > 95 and apu_bleed_switch and get(FAILURE_BLEED_APU_VALVE_STUCK) == 0
     end
-    
+
     if get(FAILURE_BLEED_IP_1_VALVE_STUCK) == 0 then
-        eng_bleed_valve_pos[1] = eng_bleed_switch[1] and (eng_lp_pressure[1] >= 8) 
-                             and (get(Fire_pb_ENG1_status) == 0) and not apu_bleed_valve_pos and get(GAS_bleed_avail) == 0
+        eng_bleed_valve_pos[1] = eng_bleed_switch[1] and (eng_lp_pressure[1] >= 8)
+                and (get(Fire_pb_ENG1_status) == 0) and not apu_bleed_valve_pos and get(GAS_bleed_avail) == 0
+
+        if pack_valve_switch[1] == false  and pack_time_close_valve[1] > 0 and get(TIME) - pack_time_close_valve[1] > 4 then
+            -- close IP valve, but only if not x-bleed  or x-bleed and other bleed valve is NOT closed
+            if not x_bleed_status or x_bleed_status and eng_bleed_valve_pos[2] == true then
+                eng_bleed_valve_pos[1] = false
+            end
+        end
+        set(L_IP_valve,eng_bleed_valve_pos[1] and 1 or 0)
     end
                              
     if get(FAILURE_BLEED_IP_2_VALVE_STUCK) == 0 then
         eng_bleed_valve_pos[2] = eng_bleed_switch[2] and (eng_lp_pressure[2] >= 8) 
                              and (get(Fire_pb_ENG2_status) == 0) and not apu_bleed_valve_pos and get(GAS_bleed_avail) == 0
+        if pack_valve_switch[2] == false   and pack_time_close_valve[2] > 0 and get(TIME) - pack_time_close_valve[2] > 4 then
+            -- close bleed valve when pack is off, but with delay
+            -- TODO based on pressure and/or pack_flow value (L/R_pack_Flow_value)
+            -- TODO pack valve closes about half pack flow value, then needle turns amber when pack valve is closed,
+            -- TODO pack flow slowly increases (check for different rate than decreases?)
+
+            -- close IP valve, but only if not x-bleed  or x-bleed and other bleed valve is NOT closed
+            if not x_bleed_status or x_bleed_status and eng_bleed_valve_pos[1] == true then
+                eng_bleed_valve_pos[2] = false
+            end
+        end
+        set(R_IP_valve,eng_bleed_valve_pos[2] and 1 or 0)
     end
 
     --X bleed valve logic--
+    local current_time = get(TIME)
     if get(X_bleed_dial) == 0 then --closed
-        x_bleed_status = false
+        if x_bleed_status == true then
+            x_bleed_switch_time = current_time
+        end
+        x_bleed_status = false  -- TODO close with some delay as well?
     elseif get(X_bleed_dial) == 1 then --auto
-        x_bleed_status = apu_bleed_valve_pos or get(GAS_bleed_avail) == 1
+        -- automatic x-bleed switching occurs only by supplying APU and ground air support
+        local x_bleed_status_new = apu_bleed_valve_pos or get(GAS_bleed_avail) == 1
+        if x_bleed_status ~= x_bleed_status_new then
+            x_bleed_switch_time = current_time
+        end
+        x_bleed_status = x_bleed_status_new
     elseif get(X_bleed_dial) == 2 then --open
+        if x_bleed_status == false then
+            x_bleed_switch_time = current_time
+        end
         x_bleed_status = true
     end
+
+    if x_bleed_switch_time > 0 then
+        local delta = get(TIME)-x_bleed_switch_time
+        if delta > 3.7  then
+            set(X_bleed_valve_disp,x_bleed_status == true and 0 or 3) -- final position
+            x_bleed_switch_time = 0
+        elseif delta > 0.3 then
+            set(X_bleed_valve_disp,2) -- moving
+        end
+    elseif x_bleed_switch_time == -1 then set(X_bleed_valve_disp,3) end
 
 end
 
 local function update_eng_pressures()
-    if get(Engine_1_avail) == 0 then
+    if not ENG.dyn[1].is_avail then
+        -- shut down
         eng_lp_pressure[1] = Set_linear_anim_value(eng_lp_pressure[1], 0, 0, 100, 1)
     else
-        local target = Math_rescale(18, ENG_NOMINAL_MIN_PRESS, 101, ENG_NOMINAL_MAX_PRESS, get(Eng_1_N1)) + math.random() + get(FAILURE_BLEED_ENG_1_hi_press) * 25
+        -- scale 18 - 101 is the N1 range
+        local target = Math_rescale(18, ENG_NOMINAL_MIN_PRESS, 101, ENG_NOMINAL_MAX_PRESS, ENG.dyn[1].n1) + math.random() + get(FAILURE_BLEED_ENG_1_hi_press) * 25
         eng_lp_pressure[1] = Set_linear_anim_value(eng_lp_pressure[1], target, 0, 100, 1)
+        -- TODO N1 takes some demand into account (WAI/NAI) but not pack config situation which should be done here or is it done just by HP valve
     end
     
-    if get(Engine_2_avail) == 0 then
+    if not ENG.dyn[2].is_avail then
         eng_lp_pressure[2] = Set_linear_anim_value(eng_lp_pressure[2], 0, 0, 100, 1)
     else
-        local target = Math_rescale(18, ENG_NOMINAL_MIN_PRESS, 101, ENG_NOMINAL_MAX_PRESS, get(Eng_2_N1)) + math.random() + get(FAILURE_BLEED_ENG_2_hi_press) * 25
+        local target = Math_rescale(18, ENG_NOMINAL_MIN_PRESS, 101, ENG_NOMINAL_MAX_PRESS, ENG.dyn[2].n1) + math.random() + get(FAILURE_BLEED_ENG_2_hi_press) * 25
         eng_lp_pressure[2] = Set_linear_anim_value(eng_lp_pressure[2], target, 0, 100, 1)
     end
-    
+
+    -- NOTE dataref value is used for ECAM line color only, pressure value is used for demand based PSI calculations
     set(L_Eng_LP_press, eng_lp_pressure[1])
     set(R_Eng_LP_press, eng_lp_pressure[2])
     
@@ -188,38 +336,69 @@ local function update_bleed_consumption()
                          + LOSS_PSI_HYD/2
                          + LOSS_PSI_WATER_TANK/2
                          + get(Pack_L) * LOSS_PSI_PACK_L
-                         + get(Eng_is_spooling_up, 1) * LOSS_PSI_ENG_CRANK
+                         + (ENG.dyn[1].cranking and 1 or 0) * LOSS_PSI_ENG_CRANK
+    -- in dual bleed with x-feed and other pack on this will add to consumption
+    if x_bleed_status == true and is_single_bleed == true then  bleed_consumption[1] = bleed_consumption[1] + get(Pack_R) * LOSS_PSI_PACK_R end
     
     -- Right side
     bleed_consumption[2] = get(AI_wing_R_operating) * LOSS_PSI_WING_ANTICE_R
                          + LOSS_PSI_HYD/2
                          + LOSS_PSI_WATER_TANK/2
                          + get(Pack_R) * LOSS_PSI_PACK_R
-                         + get(Eng_is_spooling_up, 2) * LOSS_PSI_ENG_CRANK
+                         + (ENG.dyn[2].cranking and 1 or 0) * LOSS_PSI_ENG_CRANK
+    -- TODO what is the demand in case of only one engine bleed available regarding demand and no x-feed?
+    if x_bleed_status == true and is_single_bleed == true then  bleed_consumption[2] = bleed_consumption[2] + get(Pack_L) * LOSS_PSI_PACK_L end
+
+    set(L_bleed_demand,bleed_consumption[1])
+    set(R_bleed_demand,bleed_consumption[2])
 
 end
 
 local function update_bleed_pressures()
+    -- Bleed pressure is based on pressure provided by engines via bleed and HP valve (in higher power situation e.g. dual bleed)
+    --    and demand like packs, single/dual bleed situation and x-bleed between engines is some cases
+    -- Neo A/C have two target bleed PSI values based on single/dual bleed
+    -- Engine provided pressure is based on N1 which is influenced by demand like packs, anti-ice as well (see engine minimal N1 calculation)
+    --    eng_lp_pressure is the pressure provided by IP
 
-    local left_side_press = 0
+    -- TODO adjust target_max_bleed based on pressure conditions for better HP valve open/close behavior?
+    -- TODO just cause N1 based eng_lp_pressure is too low currently, see note below
+    -- TODO but this will lead to remaining pressure even pack and all other demand is off
+    -- TODO what else are conditions that lead to open of HP valve? Probably demand...? display is based on target_max_bleed
+
+    local left_side_press = 10
     if eng_bleed_valve_pos[1] then
-        left_side_press = left_side_press + eng_lp_pressure[1] + get(L_HP_valve) * 10 - get(FAILURE_BLEED_ENG_1_LEAK) * 10
+        -- Demand has to control the valve not the other way round.
+        if is_single_bleed == 1 then
+            left_side_press  = left_side_press + 10
+        end
+        -- TODO eng_lp_pressure seems to be ~ 10 too low, possibly due to invalid factor in N1 to pressure calculation?!
+        left_side_press = left_side_press + eng_lp_pressure[1]  - get(FAILURE_BLEED_ENG_1_LEAK) * 10
     end
+
+    -- APU bleed closes engine bleed valves and opens x-bleed, so apu is the only source
     if apu_bleed_valve_pos then
-        left_side_press = left_side_press + apu_pressure - get(FAILURE_BLEED_APU_LEAK) * 10 
+        left_side_press = apu_pressure - get(FAILURE_BLEED_APU_LEAK) * 10
     end
+
+    -- HP Ground air support closes bleed valves and opens x-bleed
     if get(GAS_bleed_avail) == 1 then
-        left_side_press = left_side_press + GAS_PRESSURE + math.random()
+        left_side_press = GAS_PRESSURE + math.random()
     end
 
-    local right_side_press = 0
+    local right_side_press = 10 -- just cause N1 based eng_lp_pressure is too low currently
     if eng_bleed_valve_pos[2] then
-        right_side_press = right_side_press + eng_lp_pressure[2] + get(R_HP_valve) * 10 - get(FAILURE_BLEED_ENG_2_LEAK) * 10
-    end
+        if is_single_bleed == 1 then
+            right_side_press  = right_side_press + 10
+        end
 
+        right_side_press = right_side_press + eng_lp_pressure[2]- get(FAILURE_BLEED_ENG_2_LEAK) * 10
+    end
 
 
     if x_bleed_status then
+        -- TODO check align of pressure behavior in case of x-bleed in sim
+        -- TODO currently this lead to decrease of overall pressure even if both engines supply bleed
         if left_side_press > right_side_press then
             left_side_press  = left_side_press - bleed_consumption[1] - bleed_consumption[2]
             right_side_press = left_side_press 
@@ -227,18 +406,43 @@ local function update_bleed_pressures()
             right_side_press  = right_side_press - bleed_consumption[1] - bleed_consumption[2]
             left_side_press  = right_side_press  
         end
-        
-        
     else
-        left_side_press  = left_side_press - bleed_consumption[1]
-        right_side_press = right_side_press - bleed_consumption[2]
+        if eng_bleed_valve_pos[1] == false then
+            left_side_press = 0
+        else
+            left_side_press  = left_side_press - bleed_consumption[1]
+        end
+        if  eng_bleed_valve_pos[2] == false then
+            right_side_press = 0
+        else
+            right_side_press = right_side_press - bleed_consumption[2]
+        end
     end
     
-    left_side_press  = math.max(0, left_side_press)
-    right_side_press = math.max(0, right_side_press)
+    -- prevent pressure above the MAX pressure of 53+/-2 psi, but only if not HI_PRESS error
+    if get(FAILURE_BLEED_ENG_1_hi_press) == 0 then
+        left_side_press = Math_clamp(left_side_press,0,ENG_NOMINAL_MAX_PRESS);
+    else
+        left_side_press = math.max(0,left_side_press)
+    end
 
-    bleed_pressure[1] = Set_anim_value(bleed_pressure[1], left_side_press, 0, 100, 0.6)
-    bleed_pressure[2] = Set_anim_value(bleed_pressure[2], right_side_press, 0, 100, 0.6)
+    if get(FAILURE_BLEED_ENG_2_hi_press) == 0 then
+        right_side_press = Math_clamp(right_side_press,0,ENG_NOMINAL_MAX_PRESS);
+    else
+        right_side_press = math.max(0,right_side_press)
+    end
+
+    if bleed_pressure[1] < left_side_press then
+        bleed_pressure[1] = Set_anim_value(bleed_pressure[1], left_side_press, 0, 100, 0.6)
+    else
+        -- pressure decrease is linear
+        bleed_pressure[1] = Set_linear_anim_value(bleed_pressure[1], left_side_press, 0, 100, 1.2)
+    end
+    if bleed_pressure[2] < right_side_press then
+        bleed_pressure[2] = Set_anim_value(bleed_pressure[2], right_side_press, 0, 100, 0.6)
+    else
+        bleed_pressure[2] = Set_linear_anim_value(bleed_pressure[2], right_side_press, 0, 100, 1.2)
+    end
 
 end
 
@@ -260,6 +464,8 @@ local function update_datarefs()
     set(Pack_M, 0)--turning the center pack off as A320 doesn't have one
     set(Pack_R, pack_valve_pos[2] and 1 or 0)
     set(Gpu_bleed_switch, get(GAS_bleed_avail))
+
+    set(APU_bleed_off_time,apu_bleed_off_time)
 
     -- Pressures and temps
     set(Apu_bleed_psi, apu_pressure)
@@ -297,7 +503,7 @@ local function update_datarefs()
     end
     
     -- Knob animation
-    Set_dataref_linear_anim_nostop(X_bleed_dial_anim, get(X_bleed_dial), 0, 2, 10)
+    Set_dataref_linear_anim_nostop(X_bleed_dial_anim, get(X_bleed_dial), 0, 2, ROTARY_SWITCH_ANIMATION_SPEED)
 
 end
 
@@ -317,8 +523,8 @@ local function update_pack(n)
 
     
     local fire_push_button_status = (n == 1 and get(Fire_pb_ENG1_status) == 1) or (n == 2 and get(Fire_pb_ENG2_status) == 1) 
-    local eng_n2 = n == 1 and get(Eng_1_N2) or get(Eng_2_N2)
-    local both_eng_avail = get(Engine_1_avail) == 1 and get(Engine_2_avail) == 1
+    local eng_n2 = n == 1 and ENG.dyn[1].n2 or ENG.dyn[2].n2
+    local both_eng_avail = ENG.dyn[1].is_avail and ENG.dyn[2].is_avail
     
     if  pack_valve_switch[n] 
     and bleed_pressure[n] > 4 
@@ -338,6 +544,10 @@ local function update_pack(n)
             pack_valve_pos[n] = true
         end    
     else
+        if pack_valve_pos[n] == true then
+            pack_time_close_valve[n] = get(TIME)
+            set(Pack_off_time,pack_time_close_valve[n],n) -- for debugging purposes
+        end -- need close time for bleed valve closing timing
         pack_valve_pos[n] = false
         pack_time_open_valve[n] = 0 -- Reset
     end
@@ -413,20 +623,20 @@ local function update_pack_flow()
 
             if get(Pack_L) == 1 then
                 set(L_pack_Flow, 3)
-                Set_dataref_linear_anim(L_pack_Flow_value, 1.2*PACK_KG_PER_SEC_NOM, 0, 2000, 0.1)
+                Set_dataref_linear_anim(L_pack_Flow_value, 1.2*PACK_KG_PER_SEC_NOM, 0, 2000, 0.6)
             else
                 set(L_pack_Flow, 0)
-                Set_dataref_linear_anim(L_pack_Flow_value, 0, 0, 2000, 0.1)
+                Set_dataref_linear_anim(L_pack_Flow_value, 0, 0, 2000, 0.6)
             end
         end
                
         if get(FAILURE_BLEED_PACK_2_REGUL_FAULT) == 0 then
             if get(Pack_R) == 1 then
                 set(R_pack_Flow, 3)
-                Set_dataref_linear_anim(R_pack_Flow_value, 1.2*PACK_KG_PER_SEC_NOM, 0, 2000, 0.1)
+                Set_dataref_linear_anim(R_pack_Flow_value, 1.2*PACK_KG_PER_SEC_NOM, 0, 2000, 0.6)
             else
                 set(R_pack_Flow, 0)
-                Set_dataref_linear_anim(R_pack_Flow_value, 0, 0, 2000, 0.1)
+                Set_dataref_linear_anim(R_pack_Flow_value, 0, 0, 2000, 0.6)
             end
         end
         return
@@ -438,20 +648,20 @@ local function update_pack_flow()
     if econ_flow_switch then    -- LO flow
         if get(FAILURE_BLEED_PACK_1_REGUL_FAULT) == 0 then
             set(L_pack_Flow, mult_L * 1)
-            Set_dataref_linear_anim(L_pack_Flow_value, mult_L*0.8*PACK_KG_PER_SEC_NOM, 0, 2000, 0.1)
+            Set_dataref_linear_anim(L_pack_Flow_value, mult_L*0.8*PACK_KG_PER_SEC_NOM, 0, 2000, 0.6)
         end
         if get(FAILURE_BLEED_PACK_2_REGUL_FAULT) == 0 then
             set(R_pack_Flow, mult_R * 1)
-            Set_dataref_linear_anim(R_pack_Flow_value, mult_R*0.8*PACK_KG_PER_SEC_NOM, 0, 2000, 0.1)
+            Set_dataref_linear_anim(R_pack_Flow_value, mult_R*0.8*PACK_KG_PER_SEC_NOM, 0, 2000, 0.6)
         end
     else                        -- NORM flow
         if get(FAILURE_BLEED_PACK_1_REGUL_FAULT) == 0 then
             set(L_pack_Flow, mult_L * 2)
-            Set_dataref_linear_anim(L_pack_Flow_value, mult_L*PACK_KG_PER_SEC_NOM, 0, 2000, 0.1)
+            Set_dataref_linear_anim(L_pack_Flow_value, mult_L*PACK_KG_PER_SEC_NOM, 0, 2000, 0.6)
         end
         if get(FAILURE_BLEED_PACK_2_REGUL_FAULT) == 0 then
             set(R_pack_Flow, mult_R * 2)
-            Set_dataref_linear_anim(R_pack_Flow_value, mult_R*PACK_KG_PER_SEC_NOM, 0, 2000, 0.1)
+            Set_dataref_linear_anim(R_pack_Flow_value, mult_R*PACK_KG_PER_SEC_NOM, 0, 2000, 0.6)
         end
     end
 
@@ -519,10 +729,11 @@ function update()
     --create the A321 pack system--
 
     update_apu_pressure()
+    update_bleed_config_and_targets()  -- influences pressure as well
     update_eng_pressures()
-    update_bleed_valves()
+    update_bleed_valves() -- IP valve positions influence hp valve positions!
     update_hp_valves()
-    update_bleed_consumption()
+    update_bleed_consumption() -- influences pressure
     update_bleed_pressures()
     update_bleed_temperatures()
     update_pack(1)
