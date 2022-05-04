@@ -112,8 +112,6 @@ local left_messages_list = {
     MessageGroup_ALTI_DISCREPANCY,
     MessageGroup_ATT_DISCREPANCY,
     MessageGroup_HDG_DISCREPANCY,
-    MessageGroup_RA_FAULT,
-    MessageGroup_RA_DEGRADED,
     MessageGroup_DMC_FAULT,
     MessageGroup_ENG_FAIL_SINGLE,
     MessageGroup_HYD_G_RSVR_LO_LVL,
@@ -432,7 +430,7 @@ local function update_right_list()
     -- Better Pushback support
     if get(Wheel_better_pushback_connected) == 1 then
         local color = COL_INDICATION
-        if ENG.dyn[1].is_avail or ENG.dyn[2].is_avail then
+        if get(Engine_1_avail) == 1 or get(Engine_2_avail) == 1 then
             color = COL_CAUTION
         end
         list_right:put(color, "NW STRG DISC")
@@ -465,7 +463,7 @@ local function update_right_list()
     if get(TOTAL_SPDBRK_EXTENSION) > 2.5 then
     
         if get(EWD_flight_phase) >= PHASE_LIFTOFF and get(EWD_flight_phase) <= PHASE_TOUCHDOWN then
-            if ENG.dyn[1].n1 > 50 or ENG.dyn[2].n1 > 50 then
+            if get(Eng_1_N1) > 50 or get(Eng_2_N1) > 50 then
                 list_right:put(COL_CAUTION, "SPEED BRK")
             else
                 list_right:put(COL_INDICATION, "SPEED BRK")

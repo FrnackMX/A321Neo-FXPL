@@ -72,15 +72,6 @@ local function poly_2nd_order(coeff, x, y)
            coeff[2][2] * x * y + coeff[2][3] * x * y^2 +  coeff[3][2] * x^2 * y +  coeff[3][3] * x^2 * y^2
 end
 
-local function poly_3rd_order(coeff, x, y)
-    return coeff[1][1] + coeff[2][1] * x + coeff[3][1] * x^2  + coeff[4][1] * x^3 +
-                         coeff[1][2] * y + coeff[1][3] * y^2  + coeff[1][4] * y^3 +
-                         coeff[2][2] * x * y + coeff[3][2] * x^2 * y   + coeff[4][2] * x^3 * y +
-                                               coeff[2][3] * x   * y^2 + coeff[2][4] * x * y^3 +
-                         coeff[3][3] * x^2 * y^2 + coeff[4][3] * x^3 * y^2 + coeff[3][4] * x^2 * y^3 +
-                         coeff[4][4] * x^3 * y^3
-end
-
 local function compute_penalties(penalty_table, OAT_condition_triggered, is_packs_on, is_eng_ai_on, is_wing_ai_on)
     local EXTRA = 0
     
@@ -112,23 +103,9 @@ end
 -- TOGA mode
 -------------------------------------------------------------------------------
 
-function eng_N1_limit_takeoff_clean(OAT, altitude)
-    if altitude > 16000 then
-        return 1 + eng_N1_limit_mct(OAT, TAT, altitude, false, false, false)
-    end
-
-    local comp  = poly_3rd_order(ENG.data.modes.toga, OAT, altitude)
-    return Math_clamp(comp, 50, ENG.data.max_n1)
-end
-
 function eng_N1_limit_takeoff(OAT, TAT, altitude, is_packs_on, is_eng_ai_on, is_wing_ai_on)
 
-    if altitude > 16000 then
-        return 1 + eng_N1_limit_mct(OAT, TAT, altitude, is_packs_on, is_eng_ai_on, is_wing_ai_on)
-    end
-
-    local comp  = poly_3rd_order(ENG.data.modes.toga, OAT, altitude)
-
+    local comp  = poly_2nd_order(ENG.data.modes.toga, OAT, altitude)
 
     local temp_corner_point = ENG.data.modes.toga_penalties.temp_function(altitude)
 
@@ -165,6 +142,7 @@ end
 
 function eng_N1_limit_clb(OAT, TAT, altitude, is_packs_on, is_eng_ai_on, is_wing_ai_on)
     local comp  = poly_2nd_order(ENG.data.modes.clb, OAT, altitude)
+
     local temp_corner_point = ENG.data.modes.clb_penalties.temp_function(altitude)
 
     local EXTRA = compute_penalties(ENG.data.modes.clb_penalties, OAT >= temp_corner_point, is_packs_on, is_eng_ai_on, is_wing_ai_on)

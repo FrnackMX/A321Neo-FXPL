@@ -1,3 +1,4 @@
+local entry_cooldown = 0
 local mcdu_inp = {}
 
 local MCDU_ENTRIES = 
@@ -21,10 +22,12 @@ local MCDU_ENTRIES =
                 val = " "
             end
 
-            if #mcdu_data.entry.text < 22 then
-                mcdu_data.entry.text = mcdu_data.entry.text .. val
-            end
-
+            --if get(TIME) - entry_cooldown > get(DELTA_TIME) then
+                entry_cooldown = get(TIME)
+                if #mcdu_data.entry.text < 22 then
+                    mcdu_data.entry.text = mcdu_data.entry.text .. val
+                end
+            --end
         end
     },
     {
@@ -33,7 +36,6 @@ local MCDU_ENTRIES =
         ref_entries = MCDU_ENTRY_PAGES,
         ref_callback = 
         function (mcdu_data, count, val)
-            mcdu_data.is_page_button_hit = true
             mcdu_open_page(mcdu_data,count * 100)
         end
     },

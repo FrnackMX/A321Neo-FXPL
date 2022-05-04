@@ -164,9 +164,6 @@ function MCDU_Page:set_line(mcdu_data, align, idx, text, size, color)
     size  = size  or MCDU_LARGE
     align = align or MCDU_LEFT
     color = color or ECAM_WHITE
-
-    assert(idx)
-    assert(text)
     
     mcdu_data.dat[size][align][idx] = {txt = text, col = color}
 end
@@ -175,8 +172,6 @@ function MCDU_Page:new_multi_line(mcdu_data, align, idx, size)
     size  = size  or MCDU_LARGE
     align = align or MCDU_LEFT
 
-    assert(idx)
-
     mcdu_data.dat[size][align][idx] = {}
 end
 
@@ -184,10 +179,7 @@ function MCDU_Page:add_multi_line(mcdu_data, align, idx, text, size, color)
     size  = size  or MCDU_LARGE
     align = align or MCDU_LEFT
     color = color or ECAM_WHITE
-
-    assert(idx)
-    assert(text)
-
+    
     table.insert(mcdu_data.dat[size][align][idx], {txt = text, col = color})
 end
 

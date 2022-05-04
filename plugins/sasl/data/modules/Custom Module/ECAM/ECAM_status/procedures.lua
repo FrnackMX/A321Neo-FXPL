@@ -255,7 +255,10 @@ local proc_messages = {
         color = ECAM_BLUE,
         indent_lvl = 0, 
         cond = function()
-            return not FCTL.RUD.STAT.controlled
+            return
+            get(FAILURE_FCTL_FAC_1) == 1 and
+            get(FAILURE_FCTL_FAC_2) == 1 or
+            not FBW.fctl.surfaces.rud.lim.controlled
         end
     },
     {
@@ -265,6 +268,8 @@ local proc_messages = {
         indent_lvl = 0, 
         cond = function()
             return
+            get(FAILURE_FCTL_FAC_1) == 1 and --fcom 4412
+            get(FAILURE_FCTL_FAC_2) == 1 or
             get(FAILURE_ENG_REV_FAULT, 1) == 1 or --fcom 5056
             get(FAILURE_ENG_REV_FAULT, 2) == 1 or
             get(FAILURE_ADR[1]) == 1 and get(FAILURE_ADR[2]) == 1 or
@@ -279,7 +284,7 @@ local proc_messages = {
         indent_lvl = 0,
         cond = function()
             return
-            not FCTL.RUD.STAT.controlled
+            not FBW.fctl.surfaces.rud.lim.controlled
         end
     },
     {
@@ -289,7 +294,7 @@ local proc_messages = {
         indent_lvl = 0, 
         cond = function()
             return
-            not FCTL.RUD.STAT.controlled
+            not FBW.fctl.surfaces.rud.lim.controlled
         end
     },
     {
@@ -299,7 +304,7 @@ local proc_messages = {
         indent_lvl = 0,
         cond = function()
             return
-            not FCTL.RUD.STAT.controlled
+            not FBW.fctl.surfaces.rud.lim.controlled
         end
     },
     {
@@ -309,7 +314,7 @@ local proc_messages = {
         indent_lvl = 1, 
         cond = function()
             return
-            not FCTL.RUD.STAT.controlled
+            not FBW.fctl.surfaces.rud.lim.controlled
         end
     },
     
@@ -591,7 +596,7 @@ local proc_messages = {
         indent_lvl = 0, 
         cond = function()
             return
-            get(Engine_mode_knob) == 1 and ((get(L_bleed_press) <= 10 and not ENG.dyn[1].is_avail  and get(Engine_1_master_switch) == 1) or (get(R_bleed_press) <= 10 and not ENG.dyn[2].is_avail  and get(Engine_2_master_switch) == 1))
+            get(Engine_mode_knob) == 1 and ((get(L_bleed_press) <= 10 and get(Engine_1_avail) == 0  and get(Engine_1_master_switch) == 1) or (get(R_bleed_press) <= 10 and get(Engine_2_avail) == 0  and get(Engine_2_master_switch) == 1))
         end
     },
     {
@@ -601,7 +606,7 @@ local proc_messages = {
         indent_lvl = 0, 
         cond = function()
             return
-            get(Engine_mode_knob) == 1 and ((get(L_bleed_press) <= 10 and not ENG.dyn[1].is_avail  and get(Engine_1_master_switch) == 1) or (get(R_bleed_press) <= 10 and not ENG.dyn[2].is_avail  and get(Engine_2_master_switch) == 1))
+            get(Engine_mode_knob) == 1 and ((get(L_bleed_press) <= 10 and get(Engine_1_avail) == 0  and get(Engine_1_master_switch) == 1) or (get(R_bleed_press) <= 10 and get(Engine_2_avail) == 0  and get(Engine_2_master_switch) == 1))
         end
     },
     {
@@ -611,7 +616,7 @@ local proc_messages = {
         indent_lvl = 1, 
         cond = function()
             return
-            get(Engine_mode_knob) == 1 and ((get(L_bleed_press) <= 10 and not ENG.dyn[1].is_avail  and get(Engine_1_master_switch) == 1) or (get(R_bleed_press) <= 10 and not ENG.dyn[2].is_avail  and get(Engine_2_master_switch) == 1))
+            get(Engine_mode_knob) == 1 and ((get(L_bleed_press) <= 10 and get(Engine_1_avail) == 0  and get(Engine_1_master_switch) == 1) or (get(R_bleed_press) <= 10 and get(Engine_2_avail) == 0  and get(Engine_2_master_switch) == 1))
         end
     },
 
@@ -636,6 +641,7 @@ local proc_messages = {
             (get(FAILURE_FCTL_LELEV) == 1 or get(FAILURE_FCTL_RELEV) == 1) or
             get(FAILURE_FCTL_SEC_1) == 1 or
             get(FAILURE_FCTL_SEC_2) == 1 or
+            get(FAILURE_FCTL_SEC_3) == 1 or
             G_is_low_pressure() and B_is_low_pressure() or
             triple_adr_failure()
         end

@@ -25,8 +25,7 @@ include("global_functions.lua")
 include("graphics_helpers.lua")
 include("pushbuttons.lua")
 include("global_constants.lua")
-include("PID.lua")
-include("FLT_SYS/FBW/PID_arrays.lua")
+include("FBW/FBW_subcomponents/PID_arrays.lua")
 include("sasl_drawing_assets.lua")
 include("ADIRS_data_source.lua")
 
@@ -41,14 +40,12 @@ sasl.options.setLuaErrorsHandling(SASL_STOP_PROCESSING)
 math.randomseed( os.time() )
 
 include(moduleDirectory .. "/main_debug.lua")
-addSearchPath(moduleDirectory .. "/Custom Module/NAV/")
 addSearchPath(moduleDirectory .. "/Custom Module/PFD/")
 addSearchPath(moduleDirectory .. "/Custom Module/ND/")
 addSearchPath(moduleDirectory .. "/Custom Module/DRAIMS/")
 addSearchPath(moduleDirectory .. "/Custom Module/EFB/")
 addSearchPath(moduleDirectory .. "/Custom Module/PFD/PFD_subcomponents/")
-addSearchPath(moduleDirectory .. "/Custom Module/FLT_SYS/F_CTL")
-addSearchPath(moduleDirectory .. "/Custom Module/FLT_SYS/FBW")
+addSearchPath(moduleDirectory .. "/Custom Module/FBW/")
 addSearchPath(moduleDirectory .. "/Custom Module/MCDU/")
 addSearchPath(moduleDirectory .. "/Custom Module/AUTOFLT/")
 addSearchPath(moduleDirectory .. "/Custom Module/display_pop-ups/")
@@ -68,9 +65,8 @@ components = {
   fuel {}, -- Please keep this before engines
   engines {},
   cabin_screens {},
-
-  NAV_main {},
-
+  ADIRS {},
+  GPS {},
   FMGS {},
   CAPT_MCDU {},
   FO_MCDU {},
@@ -97,10 +93,8 @@ components = {
   anti_ice {},
   fire_eng_apu {},
   fire_cargo {},
-
   FBW_main {},
   AUTOFLT_main {},
-
   CAPT_PFD {},
   FO_PFD {},
   calls {},

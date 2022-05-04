@@ -1,8 +1,6 @@
 addSearchPath(moduleDirectory .. "/Custom Module/AUTOFLT/FCU/")
-addSearchPath(moduleDirectory .. "/Custom Module/AUTOFLT/ATHRS/")
 
 components = {
-    ATHRS_MAIN {},
     FCU {},
 }
 

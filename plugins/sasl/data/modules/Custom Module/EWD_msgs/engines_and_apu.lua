@@ -660,7 +660,7 @@ MessageGroup_ENG_1_FIRE_GROUND = {
     },
 
     is_active = function()
-        return (( get(FAILURE_FIRE_ENG_1) == 1 and FIRE_sys.eng[1].still_on_fire) or FIRE_sys.eng[1].on_test)  and get(All_on_ground) == 1
+        return get(FAILURE_FIRE_ENG_1) == 1 and FIRE_sys.eng[1].still_on_fire and get(All_on_ground) == 1
     end,
 
     is_inhibited = function()
@@ -698,7 +698,7 @@ MessageGroup_ENG_2_FIRE_GROUND = {
     },
 
     is_active = function()
-        return (( get(FAILURE_FIRE_ENG_2) == 1 and FIRE_sys.eng[2].still_on_fire) or FIRE_sys.eng[2].on_test)  and get(All_on_ground) == 1
+        return get(FAILURE_FIRE_ENG_2) == 1 and FIRE_sys.eng[2].still_on_fire and get(All_on_ground) == 1
     end,
 
     is_inhibited = function()
@@ -1069,7 +1069,7 @@ MessageGroup_ENG_REV_SET = {
 
 local Message_EFAIL_THR_LEVER_IDLE = {
     text = function()
-        local which_engine = ENG.dyn[1].is_failed and "1" or "2"
+        local which_engine = get(Eng_is_failed, 1) == 1 and "1" or "2"
         return " - THR LEVER " .. which_engine .. ".......IDLE"
     end,
 
@@ -1078,13 +1078,13 @@ local Message_EFAIL_THR_LEVER_IDLE = {
     end,
 
     is_active = function()
-        return (ENG.dyn[1].is_failed and math.abs(get(Cockpit_throttle_lever_L)) or math.abs(get(Cockpit_throttle_lever_R))) > 0.05
+        return (get(Eng_is_failed, 1) == 1 and math.abs(get(Cockpit_throttle_lever_L)) or math.abs(get(Cockpit_throttle_lever_R))) > 0.05
     end
 }
 
 local Message_EFAIL_ENG_MASTER_OFF = {
     text = function()
-        local which_engine = ENG.dyn[1].is_failed and "1" or "2"
+        local which_engine = get(Eng_is_failed, 1) == 1 and "1" or "2"
         return " - ENG MASTER " .. which_engine .. ".......OFF"
     end,
 
@@ -1093,13 +1093,13 @@ local Message_EFAIL_ENG_MASTER_OFF = {
     end,
 
     is_active = function()
-        return (ENG.dyn[1].is_failed and get(Engine_1_master_switch) or get(Engine_2_master_switch)) == 1
+        return (get(Eng_is_failed, 1) == 1 and get(Engine_1_master_switch) or get(Engine_2_master_switch)) == 1
     end
 }
 
 local Message_EFAIL_ENG_PB_PUSH = {
     text = function()
-        local which_engine = ENG.dyn[1].is_failed and "1" or "2"
+        local which_engine = get(Eng_is_failed, 1) == 1 and "1" or "2"
         return "   - ENG FIRE P/B " .. which_engine .. "..PUSH"
     end,
 
@@ -1108,7 +1108,7 @@ local Message_EFAIL_ENG_PB_PUSH = {
     end,
 
     is_active = function()
-      return (ENG.dyn[1].is_failed and get(Fire_pb_ENG1_status) or get(Fire_pb_ENG2_status)) == 0
+      return (get(Eng_is_failed, 1) == 1 and get(Fire_pb_ENG1_status) or get(Fire_pb_ENG2_status)) == 0
     end
 }
 
@@ -1122,7 +1122,7 @@ local Message_EFAIL_AGENT_1 = {
     end,
 
     is_active = function()
-        if ENG.dyn[1].is_failed then
+        if get(Eng_is_failed, 1) == 1 then
             return not FIRE_sys.eng[1].squib_1_disch
         else
             return not FIRE_sys.eng[2].squib_1_disch
@@ -1150,7 +1150,7 @@ MessageGroup_ENG_FAIL_SINGLE = {
     messages = {
         {
             text = function()
-                local which_engine = ENG.dyn[1].is_failed and "1" or "2"
+                local which_engine = get(Eng_is_failed, 1) == 1 and "1" or "2"
                 return "    " .. which_engine .. " FAIL"
             end,
             color = function() return COL_CAUTION end,
@@ -1172,7 +1172,7 @@ MessageGroup_ENG_FAIL_SINGLE = {
         },
         {
             text = function()
-                local which_engine = ENG.dyn[1].is_failed and "1" or "2"
+                local which_engine = get(Eng_is_failed, 1) == 1 and "1" or "2"
                 return "   ENG " .. which_engine .. " RELIGHT CONSIDER"
             end,
             color = function() return COL_ACTIONS end,
@@ -1181,7 +1181,7 @@ MessageGroup_ENG_FAIL_SINGLE = {
     },
 
     is_active = function()
-        return xor(ENG.dyn[1].is_failed, ENG.dyn[2].is_failed)
+        return get(Eng_is_failed, 1) + get(Eng_is_failed, 2) == 1
     end,
 
     is_inhibited = function()
@@ -1275,7 +1275,7 @@ MessageGroup_ENG_FAIL_DUAL = {
     },
 
     is_active = function()
-        return ENG.dyn[1].is_failed and ENG.dyn[2].is_failed
+        return get(Eng_is_failed, 1) + get(Eng_is_failed, 2) == 2
     end,
 
     is_inhibited = function()
@@ -1483,7 +1483,7 @@ local Message_RUD_TRIM_REV = {
     color = function() return COL_ACTIONS end,
     is_active = function()
         return get(All_on_ground) == 0 and (get(FAILURE_ENG_REV_UNLOCK, 1) + get(FAILURE_ENG_REV_UNLOCK, 2) == 1) and (
-              (get(FAILURE_ENG_REV_UNLOCK, 1) == 1 and get(RUD_TRIM_ANGLE) < 19) or (get(FAILURE_ENG_REV_UNLOCK, 2) == 1 and get(RUD_TRIM_ANGLE) > -19))
+              (get(FAILURE_ENG_REV_UNLOCK, 1) == 1 and get(Rudder_trim_target_angle) < 19) or (get(FAILURE_ENG_REV_UNLOCK, 2) == 1 and get(Rudder_trim_target_angle) > -19))
     end
 }
 
@@ -1585,19 +1585,19 @@ local function get_press_amber_limit(n2)
 end
 
 local function eng_1_lo_pr_amber()
-    return (ENG.dyn[1].is_avail and (ENG.dyn[1].oil_press >= get_press_red_limit(ENG.dyn[1].n2) and ENG.dyn[1].oil_press < get_press_amber_limit(ENG.dyn[1].n2)))
+    return (get(Engine_1_avail) == 1 and (get(Eng_1_OIL_press) >= get_press_red_limit(get(Eng_1_N2)) and get(Eng_1_OIL_press) < get_press_amber_limit(get(Eng_1_N2))))
 end
 
 local function eng_2_lo_pr_amber()
-    return (ENG.dyn[2].is_avail and (ENG.dyn[2].oil_press >= get_press_red_limit(ENG.dyn[2].n2) and ENG.dyn[2].oil_press < get_press_amber_limit(ENG.dyn[2].n2)))
+    return (get(Engine_2_avail) == 1 and (get(Eng_2_OIL_press) >= get_press_red_limit(get(Eng_2_N2)) and get(Eng_2_OIL_press) < get_press_amber_limit(get(Eng_2_N2))))
 end
 
 local function eng_1_lo_pr_red()
-    return (ENG.dyn[1].is_avail and (ENG.dyn[1].oil_press < get_press_red_limit(ENG.dyn[1].n2)))
+    return (get(Engine_1_avail) == 1 and (get(Eng_1_OIL_press) < get_press_red_limit(get(Eng_1_N2))))
 end
 
 local function eng_2_lo_pr_red()
-    return (ENG.dyn[2].is_avail and (ENG.dyn[2].oil_press < get_press_red_limit(ENG.dyn[2].n2)))
+    return (get(Engine_2_avail) == 1 and (get(Eng_2_OIL_press) < get_press_red_limit(get(Eng_2_N2))))
 end
 
 
@@ -2010,10 +2010,10 @@ MessageGroup_ENG_LO_START_AIR = {
         {
             text = function()
                 local N = ""
-                if (get(L_bleed_press) <= 10 and not ENG.dyn[1].is_avail  and get(Engine_1_master_switch) == 1) then
+                if (get(L_bleed_press) <= 10 and get(Engine_1_avail) == 0  and get(Engine_1_master_switch) == 1) then
                     N = "1"
                 end
-                if (get(R_bleed_press) <= 10 and not ENG.dyn[2].is_avail  and get(Engine_2_master_switch) == 1) then
+                if (get(R_bleed_press) <= 10 and get(Engine_2_avail) == 0  and get(Engine_2_master_switch) == 1) then
                     if #N > 0 then
                         N = N .. "+"
                     end
@@ -2039,7 +2039,7 @@ MessageGroup_ENG_LO_START_AIR = {
     },
 
     is_active = function()
-        return get(Engine_mode_knob) == 1 and ((get(L_bleed_press) <= 10 and not ENG.dyn[1].is_avail  and get(Engine_1_master_switch) == 1) or (get(R_bleed_press) <= 10 and not ENG.dyn[2].is_avail  and get(Engine_2_master_switch) == 1))
+        return get(Engine_mode_knob) == 1 and ((get(L_bleed_press) <= 10 and get(Engine_1_avail) == 0  and get(Engine_1_master_switch) == 1) or (get(R_bleed_press) <= 10 and get(Engine_2_avail) == 0  and get(Engine_2_master_switch) == 1))
     end,
 
     is_inhibited = function()
@@ -2055,22 +2055,22 @@ MessageGroup_ENG_LO_START_AIR = {
 
 local function start_fault_1()
     
-    if get(All_on_ground) == 1 and MessageGroup_ENG_START_FAULT.eng_1_s_time == 0 and not ENG.dyn[1].is_avail  and ENG.dyn[1].n2 > 11 then
+    if get(All_on_ground) == 1 and MessageGroup_ENG_START_FAULT.eng_1_s_time == 0 and get(Engine_1_avail) == 0  and get(Eng_1_N2) > 11 then
         MessageGroup_ENG_START_FAULT.eng_1_s_time = get(TIME)
-    elseif (ENG.dyn[1].is_avail and 1 or 0) + get(Engine_1_master_switch) ~= 1 or get(All_on_ground) == 0 then
+    elseif get(Engine_1_avail) + get(Engine_1_master_switch) ~= 1 or get(All_on_ground) == 0 then
         MessageGroup_ENG_START_FAULT.eng_1_s_time = 0
     end
     local TIME_LIMIT = 60
     local engine_L = math.abs(get(Cockpit_throttle_lever_L))  >= 0.05
                      or (MessageGroup_ENG_START_FAULT.eng_1_s_time ~= 0 and get(TIME) - MessageGroup_ENG_START_FAULT.eng_1_s_time > TIME_LIMIT)
-    return (engine_L and not ENG.dyn[1].is_avail  and get(Engine_1_master_switch) == 1)
+    return (engine_L and get(Engine_1_avail) == 0  and get(Engine_1_master_switch) == 1)
 end
 
 local function start_fault_2()
 
-    if get(All_on_ground) == 1 and  MessageGroup_ENG_START_FAULT.eng_2_s_time == 0 and not ENG.dyn[2].is_avail  and ENG.dyn[2].n2 > 11 then
+    if get(All_on_ground) == 1 and  MessageGroup_ENG_START_FAULT.eng_2_s_time == 0 and get(Engine_2_avail) == 0  and get(Eng_2_N2) > 11 then
         MessageGroup_ENG_START_FAULT.eng_2_s_time = get(TIME)
-    elseif (ENG.dyn[2].is_avail and 1 or 0) + get(Engine_2_master_switch) ~= 1 or get(All_on_ground) == 0  then
+    elseif get(Engine_2_avail) + get(Engine_2_master_switch) ~= 1 or get(All_on_ground) == 0  then
         MessageGroup_ENG_START_FAULT.eng_2_s_time = 0
     end
     local TIME_LIMIT = 60
@@ -2078,7 +2078,7 @@ local function start_fault_2()
     local engine_R = math.abs(get(Cockpit_throttle_lever_R))  >= 0.05
                      or (MessageGroup_ENG_START_FAULT.eng_2_s_time ~= 0 and get(TIME) - MessageGroup_ENG_START_FAULT.eng_2_s_time > TIME_LIMIT)
 
-    return (engine_R and not ENG.dyn[2].is_avail  and get(Engine_2_master_switch) == 1)
+    return (engine_R and get(Engine_2_avail) == 0  and get(Engine_2_master_switch) == 1)
 
 end
 
@@ -2190,10 +2190,10 @@ MessageGroup_ENG_OIL_HI_TEMP = {
         {
             text = function()
                 local N = ""
-                if (ENG.dyn[1].oil_temp > ENG.data.display.oil_temp_high_amber) then
+                if (get(Eng_1_OIL_temp) > ENG.data.display.oil_temp_high_amber) then
                     N = "1"
                 end
-                if (ENG.dyn[2].oil_temp > ENG.data.display.oil_temp_high_amber)  then
+                if (get(Eng_2_OIL_temp) > ENG.data.display.oil_temp_high_amber)  then
                     if #N > 0 then
                         N = N .. "+"
                     end
@@ -2217,17 +2217,17 @@ MessageGroup_ENG_OIL_HI_TEMP = {
         {
             text = function() return "   - ENG MASTER 1.....OFF" end,
             color = function() return COL_ACTIONS end,
-            is_active = function() return (ENG.dyn[1].oil_temp > ENG.data.display.oil_temp_high_amber)  and get(Engine_1_master_switch) == 1 end
+            is_active = function() return (get(Eng_1_OIL_temp) > ENG.data.display.oil_temp_high_amber)  and get(Engine_1_master_switch) == 1 end
         },
         {
             text = function() return "   - ENG MASTER 2.....OFF" end,
             color = function() return COL_ACTIONS end,
-            is_active = function() return (ENG.dyn[2].oil_temp > ENG.data.display.oil_temp_high_amber)  and get(Engine_2_master_switch) == 1 end
+            is_active = function() return (get(Eng_2_OIL_temp) > ENG.data.display.oil_temp_high_amber)  and get(Engine_2_master_switch) == 1 end
         },
     },
 
     is_active = function()
-        return ENG.dyn[1].oil_temp > ENG.data.display.oil_temp_high_amber or ENG.dyn[2].oil_temp > ENG.data.display.oil_temp_high_amber
+        return get(Eng_1_OIL_temp) > ENG.data.display.oil_temp_high_amber or get(Eng_2_OIL_temp) > ENG.data.display.oil_temp_high_amber
     end,
 
     is_inhibited = function()

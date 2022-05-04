@@ -36,10 +36,6 @@ function configure_leap_1a()
             return 1067.597 + (525.8561 - 1067.597)/(1 + (n1/76.42303)^4.611082) + (oat-6) *2
         end,
 
-        n2_spoolup_fun = function(t)
-            -- f( x ) = -51.28921087158405 + 26.341569276939737x - 4.888598740355502x2 + 0.4958496916187694x3 - 0.030213494410506178x4 + 0.0011400009575645398x5 - 0.00002614187911145765x6 + 3.3430175965887e-7x7 - 1.83007315404e-9x8
-            return  -51.28921087158405 + 26.341569276939737*t - 4.888598740355502*t^2 + 0.4958496916187694*t^3 - 0.030213494410506178*t^4 + 0.0011400009575645398*t^5 - 0.00002614187911145765*t^6 + 3.3430175965887e-7*t^7 - 1.83007315404e-9*t^8
-        end,
 
         oil = {
             qty_max = 17,               -- [QT]
@@ -90,14 +86,10 @@ function configure_leap_1a()
                 {n1_set = 17.6,   n1_increase_per_sec = 0.79, fuel_flow = 360, egt=623},
                 {n1_set = 18.3,   n1_increase_per_sec = 0.24, fuel_flow = 380, egt=637},
                 {n1_set = 18.5,   n1_increase_per_sec = 0.24, fuel_flow = 380, egt=637},
-            },
-            ign_on_n2 = 16, -- TODO copied from PW, TBC
-            ign_off_n2 = 55,
-            sav_close_n2 = 56
+            }
         },
         
         display = {
-            n1_red_limit = 101,
             egt_scale = 1200,               -- [°C]
             egt_red_limit = 1050,           -- [°C]
             egt_amber_limit = 950,          -- [°C]
@@ -115,65 +107,8 @@ function configure_leap_1a()
             oil_temp_high_adv  = 140,
             oil_temp_high_amber= 155,
 
-        },
-        -- TODO this are just dummy values copied from PW1133g.lua at the moment to avoid crash on engine type switch
-        -- LEAP1A will be difficult to model since there seems to be no known FF sim supporting that engine currently
-        -- we have to try to get some flight deck videos
-        modes = {
-            toga = { { 9.09537996e+01,  8.24769700e-04, -1.96960266e-08},       -- + 5
-                     { 1.45243960e-01, -6.53689814e-06, -1.70959299e-10},
-                     {-4.80580173e-04, -2.17676880e-07,  4.76961949e-12}
-            },
-            toga_penalties = {
-                temp_function = function(altitude) return 34 - (altitude+2000)/500 end,
-                packs_dn_temp = -1.2,
-                packs_up_temp = -1.5,
-                nai_dn_temp = 0,
-                nai_up_temp = -0.3,
-                wai_dn_temp = 0,
-                wai_up_temp = -1.4,
-            },
-            mct = {  { 8.86876385e+01,  5.00892548e-04, -9.41982308e-09},        -- + 3
-                     { 1.43874177e-01, -7.44232815e-06,  5.47076769e-11},
-                     {-4.88562399e-04, -1.52254937e-07,  2.74045662e-12}
-            },
-            mct_penalties = {
-                temp_function = function(altitude) return 34 - (altitude+2000)/700 end,
-                packs_dn_temp = -1.5,
-                packs_up_temp = -1.6,
-                nai_dn_temp = 0.2,
-                nai_up_temp = -0.3,
-                wai_dn_temp = 0.2,
-                wai_up_temp = -3.0,
-            },
-            clb = {  { 8.45891154e+01, 5.99049610e-04, -8.66883834e-09},        -- + 2.5
-                     { 1.31937461e-01, -3.22712476e-06, -5.12397002e-11},
-                     {-4.90067904e-04, -1.16452281e-07,  1.49889194e-12}
-            },
-            clb_penalties = {
-                temp_function = function(altitude) return 34 - (altitude+2000)/700 end,
-                packs_dn_temp = -1.3,
-                packs_up_temp = -1.5,
-                nai_dn_temp = 0.5,
-                nai_up_temp = -0.3,
-                wai_dn_temp = 0.5,
-                wai_up_temp = -1.2,
-            },
-            flex = {
-                right = {
-                    { 2.12393386e+01,  8.92878354e-04, -1.99370130e-08},
-                    { 1.31597922e-01,  8.34865809e-06, -2.06686148e-09},
-                    {-5.08554113e-03, -5.60800867e-07,  3.78138529e-11}
-                },
-                left = {
-                    m = 2/3,
-                    q = 206/3 + 3,      -- + 3
-                    oat_off = 0.1
-                }
-            }
-
-
         }
+
     }
 
 end

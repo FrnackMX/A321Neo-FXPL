@@ -249,8 +249,6 @@ function THIS_PAGE:L6(mcdu_data)
 end
 
 function THIS_PAGE:R6(mcdu_data)
-    FMGS_reshape_fpln()
-    FMGS_reshape_fpln_dep(FMGS_get_current_fpln()) -- Add discontinuity if necessary
     FMGS_insert_temp_fpln()
     mcdu_open_page(mcdu_data, 600)
 end
@@ -263,8 +261,7 @@ function THIS_PAGE:Slew_Down(mcdu_data)
 end
 
 function THIS_PAGE:Slew_Up(mcdu_data)
-    print(THIS_PAGE.sid_length / 4, THIS_PAGE.curr_page)
-    if math.ceil(THIS_PAGE.sid_length / 4) <= THIS_PAGE.curr_page then
+    if math.floor(THIS_PAGE.sid_length / 4) <= THIS_PAGE.curr_page then
         MCDU_Page:Slew_Up(mcdu_data)
     else
         THIS_PAGE.curr_page = THIS_PAGE.curr_page + 1

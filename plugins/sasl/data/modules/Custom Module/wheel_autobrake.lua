@@ -65,8 +65,6 @@ local pid_array = {
 sasl.registerCommandHandler (Toggle_lo_autobrake, 0, function(phase) Toggle_autobrake(phase, AUTOBRK_LOW)  end)
 sasl.registerCommandHandler (Toggle_med_autobrake, 0, function(phase) Toggle_autobrake(phase, AUTOBRK_MED) end)
 sasl.registerCommandHandler (Toggle_max_autobrake, 0, function(phase) Toggle_autobrake(phase, AUTOBRK_MAX) end)
--- Airbus TCA support
-sasl.registerCommandHandler (TCA_disable_autobrake, 0, function(phase) set(Wheel_autobrake_status, AUTOBRK_OFF) end)
 
 
 function Toggle_autobrake(phase, value)
@@ -129,7 +127,7 @@ end
 
 local function is_autobrake_braking()
 
-    if get(SEC_1_status) + get(SEC_2_status) < 2 then
+    if get(SEC_1_status) + get(SEC_2_status) + get(SEC_3_status) < 2 then
         return false    -- Cannot autobrake if at least 2 sec available
     end
     
