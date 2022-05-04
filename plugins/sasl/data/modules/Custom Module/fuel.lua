@@ -616,8 +616,8 @@ local function update_fuel_usage()
     
     local prev_eng1 = get(Ecam_fuel_usage_1)
     local prev_eng2 = get(Ecam_fuel_usage_2)
-    local curr_flow_per_sec_1 = get(Eng_1_FF_kgs)
-    local curr_flow_per_sec_2 = get(Eng_2_FF_kgs)
+    local curr_flow_per_sec_1 = ENG.dyn[1].ff
+    local curr_flow_per_sec_2 = ENG.dyn[2].ff
 
     set(Ecam_fuel_usage_1, prev_eng1 + curr_flow_per_sec_1 * get(DELTA_TIME))
     set(Ecam_fuel_usage_2, prev_eng2 + curr_flow_per_sec_2 * get(DELTA_TIME))
@@ -688,7 +688,7 @@ local function update_eng_1_valve()
         eng_1_fw_valve_position = Set_linear_anim_value(eng_1_fw_valve_position, 0, 0, 1, 0.9)
     end
 
-    set(Eng_1_Firewall_valve, eng_1_fw_valve_position == 1 and 0 or (eng_1_fw_valve_position == 0 and 1 or 2))
+    ENG.dyn[1].firewall_valve = eng_1_fw_valve_position == 1 and 0 or (eng_1_fw_valve_position == 0 and 1 or 2)
 end
 
 local function update_eng_2_valve()
@@ -704,7 +704,7 @@ local function update_eng_2_valve()
         eng_2_fw_valve_position = Set_linear_anim_value(eng_2_fw_valve_position, 0, 0, 1, 0.95)
     end
 
-    set(Eng_2_Firewall_valve, eng_2_fw_valve_position == 1 and 0 or (eng_2_fw_valve_position == 0 and 1 or 2))
+    ENG.dyn[2].firewall_valve = eng_2_fw_valve_position == 1 and 0 or (eng_2_fw_valve_position == 0 and 1 or 2)
 end
 
 local function update_fuel_leaks()

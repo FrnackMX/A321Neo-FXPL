@@ -65,7 +65,7 @@ Packs_debug_window = contextWindow {
   };
 }
 
-SSS_FBW_UI = contextWindow {
+--[[SSS_FBW_UI = contextWindow {
   name = "SSS FBW UI";
   position = { 50 , 250 , 975 , 600};
   noBackground = true ;
@@ -77,7 +77,7 @@ SSS_FBW_UI = contextWindow {
   components = {
     FBW_UI {position = { 0 , 0 , 1000 , 600 }}
   };
-}
+}]]
 
 ECAM_debug_window = contextWindow {
   name = "ECAM DEBUG";
@@ -109,15 +109,15 @@ ELEC_debug_window = contextWindow {
 
 ENG_debug_window = contextWindow {
   name = "ENG DEBUG";
-  position = { 200 , 200 , 500 , 500};
+  position = { 200 , 200 , 800 , 700};
   noBackground = true ;
   proportional = false ;
-  minimumSize = { 500 , 500 };
-  maximumSize = { 500 , 500 };
+  minimumSize = { 800 , 700 };
+  maximumSize = { 800 , 700 };
   gravity = { 0 , 1 , 0 , 1 };
   visible = false ;
   components = {
-    engines_debug {position = { 0 , 0 , 500 , 500 }}
+    engines_debug {position = { 0 , 0 , 800 , 700 }}
   };
 }
 
@@ -377,20 +377,6 @@ MAGIC_window = contextWindow {
   };
 }
 
-TUNING_window = contextWindow {
-  name = "Live Tuning Console";
-  position = { 0 , 0 , 900, 800 };
-  noBackground = true ;
-  proportional = true ;
-  minimumSize = { 900/3, 800/3 };
-  maximumSize = { 900, 800 };
-  gravity = { 0 , 1 , 0 , 1 };
-  visible = false;
-  components = {
-      live_tuning_console {}
-  };
-}
-
 PID_UI_window = contextWindow {
   name = "PID TUNING UI";
   position = { 150 , 150 , 600, 300 };
@@ -461,5 +447,20 @@ Cinetracker_ABNZ = contextWindow {
   visible = false;
   components = {
       alpha_beta_nz {}
+  };
+}
+
+
+FMGS_debug_window = contextWindow {
+  name = "FMGS Debug";
+  position = { 150 , 150 , 1000 , 600 };
+  noBackground = true ;
+  proportional = false ;
+  minimumSize = { 1000 , 600 };
+  maximumSize = { 1000 , 600 };
+  gravity = { 0 , 1 , 0 , 1 };
+  visible = false ;
+  components = {
+    FMGS_debug {position = { 0 , 0 , 1000 , 600 }}
   };
 }
